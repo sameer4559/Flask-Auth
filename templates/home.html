@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container" style="background-color: lightblue; padding: 90px;">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h2 class="card-title">Welcome to My Flask App</h2>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        {% if current_user.email %}
+                            Hello, you are currently logged in through your email: <strong>{{ current_user.email }}</strong>.
+                        {% else %}
+                            {% if current_user.username %}
+                                Hello, you are currently logged in with your username: <strong>{{ current_user.username }}</strong>.
+                            {% else %}
+                                You are not currently logged in.
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
