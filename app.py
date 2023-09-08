@@ -125,45 +125,49 @@ def reset_password_request():
             db.session.commit()
             
             # Send the reset password email
-            reset_link = url_for('reset_password', token=token, _external=True)
+            reset_link = url_for('set_new_password', token=token, _external=True)
             msg = Message('Password Reset', sender='sameerjadhav2228@gmail.com', recipients=[email])
             msg.body = f'Click the following link to reset your password: {reset_link}'
             mail.send(msg)
 
             flash('A password reset link has been sent to your email.', 'info')
+            return redirect(url_for('login'))
         else:
-            flash('Email address not found. Please check your email or username and try again.', 'danger')
-        return redirect(url_for('login'))
-
+            flash('Email address not found. Please check your email and try again.', 'danger')
+    
     return render_template('reset_password.html', title='Reset Password')
 
-@app.route('/reset_password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
+@app.route('/set_new_password/<token>', methods=['GET', 'POST'])
+def set_new_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('home'))
 
     if request.method == 'POST':
         new_password = request.form.get('new_password')
-        # Verify and reset the user's password here
-        token_serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-        try:
-            email = token_serializer.loads(token, salt='password-reset-salt', max_age=3600)  # Max age: 1 hour
-            user = User.query.filter_by(email=email).first()
-            if user:
-                hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
-                user.password = hashed_password
-                db.session.commit()
-                flash('Your password has been reset successfully.', 'success')
-                return redirect(url_for('login'))
-            else:
-                flash('Invalid token. Please request a new password reset.', 'danger')
-        except SignatureExpired:
-            flash('Token has expired. Please request a new password reset.', 'danger')
-        except Exception:
-            flash('Invalid token. Please request a new password reset.', 'danger')
-        return redirect(url_for('login'))
+        confirm_password = request.form.get('confirm_password')
 
-    return render_template('reset_password.html', title='Reset Password', token=token)
+        if new_password != confirm_password:
+            flash('Passwords do not match. Please try again.', 'danger')
+        else:
+            # Verify and reset the user's password here
+            token_serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+            try:
+                email = token_serializer.loads(token, salt='password-reset-salt', max_age=3600)  # Max age: 1 hour
+                user = User.query.filter_by(email=email).first()
+                if user:
+                    hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                    user.password = hashed_password
+                    db.session.commit()
+                    flash('Your password has been reset successfully.', 'success')
+                    return redirect(url_for('login'))
+                else:
+                    flash('Invalid token. Please request a new password reset.', 'danger')
+            except SignatureExpired:
+                flash('Token has expired. Please request a new password reset.', 'danger')
+            except Exception:
+                flash('Invalid token. Please request a new password reset.', 'danger')
+
+    return render_template('set_new_password.html', title='Set New Password', token=token)
 
 @app.route('/confirm_email/<token>')
 def confirm_email(token):
